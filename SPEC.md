@@ -29,6 +29,8 @@ Process entire folders of photos at once, saving time when watermarking large pr
 **Original Quality Preservation**
 High-quality JPEG output maintains the integrity of your original images, with minimal compression artifacts.
 
+**Supported Formats:** PNG and JPEG input. Output is always high-quality JPEG or PNG depending on the input.
+
 **User authentication (sign up, login, logout) via better-auth**
 
 ### Tech
@@ -220,10 +222,55 @@ CREATE TABLE verification (
 
 ## 7. API Design (Next.js Route Handlers)
 
+### 7.1 Watermark Endpoint
 
-### 7.1 Authentication Access
+`POST /api/watermark`
+
+- Accepts `multipart/form-data` with one or more image files
+- Accepted MIME types: `image/png`, `image/jpeg`
+- Max file size: **10 MB** per image
+- Returns processed JPEG image(s) or PNG image(s)
+- Requires authentication (session cookie)
+
+### 7.2 Authentication Endpoint
+
+`POST /api/auth/[...all]`
+
+- better-auth catch-all route handler
+- Handles sign-up, login, logout, and session management
+
+### 7.3 Authentication Access
 
 Implement a server helper from better-auth like `getCurrentUser()` or `getSession()`.
+
+## 8. File Storage
+
+- Processed images are returned directly in the API response — **no server-side persistence**
+- Uploaded files are held in memory only during processing and discarded immediately after
+
+## 9. Image Processing
+
+- **Library:** Sharp
+- **Watermark algorithm:**
+  - Diagonal text running bottom-left → top-right
+  - Text color: white (`#FFFFFF`) at **50% opacity**
+  - Font size proportional to image dimensions (scales automatically)
+  - Default watermark text: `Léonore Grec Architecte`
+- Output format: JPEG (high quality)
+
+## 10. Security
+
+- **File size limit:** 10 MB per image, enforced server-side
+- **Input validation:** verify MIME type (`image/png`, `image/jpeg`) before processing
+- **Auth middleware:** `/api/watermark` requires a valid session — reject unauthenticated requests with 401
+- **Rate limiting:** consider rate limiting per user to prevent abuse (future improvement)
+
+## 11. UI Pages
+
+- **Login** (`/login`) — email + password form
+- **Sign Up** (`/signup`) — email + password + name form
+- **Dashboard** (`/`) — protected page; upload area, process button, download processed image(s)
+- Basic layout: centered card-based UI, responsive, TailwindCSS styling
 
 ## 12. Development Workflow
 
@@ -231,7 +278,7 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
 2. Set up TailwindCSS
 3. Integrate better-auth and session handling
 4. Implement SQLite DB initialization and migrations (e.g. via a `scripts/init-db.ts` or manual `.sql`)
-5. Build DB helpers and note repository
+5. Build DB helpers and watermark processing module
 6. Implement APIs
-7. Build dashboard 
-10. Add polish (loading states, toast messages, error handling)
+7. Build dashboard
+8. Add polish (loading states, toast messages, error handling)
