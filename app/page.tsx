@@ -19,6 +19,12 @@ export default function Dashboard() {
   const [results, setResults] = useState<ProcessedImage[]>([]);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.push("/login");
+    }
+  }, [isPending, session, router]);
+
   if (isPending) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -26,12 +32,6 @@ export default function Dashboard() {
       </main>
     );
   }
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/login");
-    }
-  }, [isPending, session, router]);
 
   if (!session) {
     return null;
