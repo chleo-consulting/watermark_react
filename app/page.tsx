@@ -34,10 +34,19 @@ export default function Dashboard() {
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files));
+      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
       setResults([]);
       setError("");
     }
+  }
+
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function formatSize(bytes: number) {
+    if (bytes >= 1_048_576) return (bytes / 1_048_576).toFixed(1) + " MB";
+    return (bytes / 1024).toFixed(1) + " KB";
   }
 
   async function handleProcess() {
@@ -125,6 +134,30 @@ export default function Dashboard() {
             className="hidden"
           />
         </div>
+
+        {/* File list */}
+        {files.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {files.map((file, i) => (
+              <li
+                key={`${file.name}-${i}`}
+                className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-2 text-sm"
+              >
+                <span className="truncate">
+                  {file.name}{" "}
+                  <span className="text-gray-400">({formatSize(file.size)})</span>
+                </span>
+                <button
+                  onClick={() => removeFile(i)}
+                  className="ml-2 text-gray-400 hover:text-red-500"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {/* Process button */}
         {files.length > 0 && (

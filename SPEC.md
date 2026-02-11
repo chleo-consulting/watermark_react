@@ -269,7 +269,7 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
 
 - **Login** (`/login`) — email + password form
 - **Sign Up** (`/signup`) — email + password + name form
-- **Dashboard** (`/`) — protected page; upload area, process button, download processed image(s)
+- **Dashboard** (`/`) — protected page; upload area, file list showing name and size for each selected file, process button, download processed image(s)
 - Basic layout: centered card-based UI, responsive, TailwindCSS styling
 
 ## 12. Development Workflow
