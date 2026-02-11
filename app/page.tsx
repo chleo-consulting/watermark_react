@@ -2,7 +2,7 @@
 
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface ProcessedImage {
   name: string;
@@ -27,8 +27,13 @@ export default function Dashboard() {
     );
   }
 
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.push("/login");
+    }
+  }, [isPending, session, router]);
+
   if (!session) {
-    router.push("/login");
     return null;
   }
 
