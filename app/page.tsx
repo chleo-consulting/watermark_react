@@ -1,0 +1,184 @@
+"use client";
+
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
+
+interface ProcessedImage {
+  name: string;
+  data: string;
+  mimeType: string;
+}
+
+export default function Dashboard() {
+  const { data: session, isPending } = authClient.useSession();
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const [results, setResults] = useState<ProcessedImage[]>([]);
+  const [error, setError] = useState("");
+
+  if (isPending) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </main>
+    );
+  }
+
+  if (!session) {
+    router.push("/login");
+    return null;
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+      setResults([]);
+      setError("");
+    }
+  }
+
+  async function handleProcess() {
+    if (files.length === 0) return;
+    setProcessing(true);
+    setError("");
+    setResults([]);
+
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
+
+    try {
+      const res = await fetch("/api/watermark", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        setError(body.error || "Processing failed");
+        return;
+      }
+
+      const body = await res.json();
+      setResults(body.images);
+    } catch {
+      setError("Network error");
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  function downloadImage(img: ProcessedImage) {
+    const link = document.createElement("a");
+    link.href = `data:${img.mimeType};base64,${img.data}`;
+    link.download = img.name;
+    link.click();
+  }
+
+  function downloadAll() {
+    for (const img of results) {
+      downloadImage(img);
+    }
+  }
+
+  async function handleLogout() {
+    await authClient.signOut();
+    router.push("/login");
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl p-6">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Add Watermark</h1>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600">{session.user.name}</span>
+          <button
+            onClick={handleLogout}
+            className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        {/* Upload area */}
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center hover:border-blue-400"
+        >
+          <p className="text-gray-600">
+            {files.length > 0
+              ? `${files.length} file(s) selected`
+              : "Click to select images (PNG, JPEG)"}
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </div>
+
+        {/* Process button */}
+        {files.length > 0 && (
+          <button
+            onClick={handleProcess}
+            disabled={processing}
+            className="mt-4 w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {processing ? "Processing..." : "Add Watermark"}
+          </button>
+        )}
+
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+        {/* Results */}
+        {results.length > 0 && (
+          <div className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-medium">Processed Images</h2>
+              {results.length > 1 && (
+                <button
+                  onClick={downloadAll}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Download all
+                </button>
+              )}
+            </div>
+            <div className="space-y-3">
+              {results.map((img, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-md border border-gray-200 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`data:${img.mimeType};base64,${img.data}`}
+                      alt={img.name}
+                      className="h-12 w-12 rounded object-cover"
+                    />
+                    <span className="text-sm">{img.name}</span>
+                  </div>
+                  <button
+                    onClick={() => downloadImage(img)}
+                    className="rounded-md bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
+                  >
+                    Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
