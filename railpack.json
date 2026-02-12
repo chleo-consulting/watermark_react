@@ -3,6 +3,6 @@
   "buildAptPackages": ["python3", "gcc", "make"],
   "deploy": {
     "aptPackages": ["fontconfig"],
-    "startCommand": "bun run start"
+    "startCommand": "node .next/standalone/server.js"
   }
 }
