@@ -11,6 +11,7 @@ export function getDb(): Database.Database {
     mkdirSync(join(process.cwd(), "data"), { recursive: true });
     db = new Database(DB_PATH);
     db.pragma("journal_mode = WAL");
+    db.pragma("busy_timeout = 5000");
   }
   return db;
 }

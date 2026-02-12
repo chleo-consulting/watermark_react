@@ -1,6 +1,6 @@
 [phases.setup]
 aptPkgs = ["fontconfig"]
-nixPkgs = ["bun"]
+nixPkgs = ["bun", "nodejs_22", "python3", "gcc", "gnumake"]
 
 [phases.install]
 cmds = ["bun install --frozen-lockfile"]
