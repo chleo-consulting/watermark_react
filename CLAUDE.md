@@ -16,6 +16,7 @@ bun dev          # Start development server (http://localhost:3000)
 bun run build    # Build for production
 bun run lint     # Run ESLint
 bun start        # Start production server
+bun run db:init  # Initialize the database
 ```
 
 ## Architecture
@@ -26,13 +27,39 @@ This is a Next.js 16 application using the App Router pattern with:
 - **TypeScript**: Strict mode enabled
 - **Styling**: Tailwind CSS 4 with PostCSS
 - **React**: Version 19
+- **Deployment**: Railway (Railpack builder, config in `railpack.json`)
 
 ### Key Dependencies
 
 - `better-auth` - Authentication library
+- `better-sqlite3` - SQLite database
+- `sharp` - Image processing (watermark rendering)
 - `zod` - Schema validation
 
 ### Project Structure
 
 - `app/` - Next.js App Router pages and layouts
+- `app/globals.css` - Tailwind `@theme` custom color tokens
+- `lib/` - Shared utilities (auth, db)
+- `scripts/` - Database initialization
 - `@/*` path alias maps to project root
+
+### Design System
+
+Custom color palette defined in `app/globals.css` via Tailwind CSS 4 `@theme` directive:
+
+| Token | Role |
+|---|---|
+| `dark` | Body text, headings (`#2D2D2D`) |
+| `navy` | Primary accent — buttons, links, avatar |
+| `steel` | Secondary accent — focus rings, icons |
+| `mist` | Borders, placeholders, subtle hints |
+| `cream` | Page background, input backgrounds |
+
+To change the palette, only edit `globals.css` — all components reference token names, not hex values.
+
+### Layout
+
+- **Header**: Sticky with `backdrop-blur`, app title left, user avatar + logout right
+- **Dashboard**: 2-column grid (`320px` sidebar + `1fr` workspace) on `lg:`, stacks on mobile
+- **Auth pages**: Centered card (`max-w-sm`)
