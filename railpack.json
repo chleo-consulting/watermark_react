@@ -1,0 +1,8 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": ["python3", "gcc", "make"],
+  "deploy": {
+    "aptPackages": ["fontconfig"],
+    "startCommand": "bun run start"
+  }
+}

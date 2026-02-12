@@ -330,3 +330,7 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
 6. Implement APIs
 7. Build dashboard
 8. Add polish (loading states, toast messages, error handling)
+
+## secret creation
+
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
