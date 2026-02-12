@@ -1,8 +1,6 @@
 import sharp from "sharp";
 
-const WATERMARK_TEXT = "Léonore Grec Architecte";
-
-function buildWatermarkSvg(width: number, height: number): Buffer {
+function buildWatermarkSvg(width: number, height: number, text: string): Buffer {
   // Font size proportional to image diagonal
   const diagonal = Math.sqrt(width * width + height * height);
   const fontSize = Math.max(16, Math.round(diagonal / 30));
@@ -19,7 +17,7 @@ function buildWatermarkSvg(width: number, height: number): Buffer {
 
   for (let y = 0; y < coverSize; y += lineSpacing) {
     lines.push(
-      `<text x="${coverSize / 2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="${fontSize}" fill="white" fill-opacity="0.5" letter-spacing="2">${escapeXml(WATERMARK_TEXT)}</text>`
+      `<text x="${coverSize / 2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="${fontSize}" fill="white" fill-opacity="0.5" letter-spacing="2">${escapeXml(text)}</text>`
     );
   }
 
@@ -43,14 +41,15 @@ function escapeXml(str: string): string {
 
 export async function addWatermark(
   input: Buffer,
-  mimeType: string
+  mimeType: string,
+  text: string
 ): Promise<Buffer> {
   const image = sharp(input);
   const metadata = await image.metadata();
   const width = metadata.width!;
   const height = metadata.height!;
 
-  const watermarkSvg = buildWatermarkSvg(width, height);
+  const watermarkSvg = buildWatermarkSvg(width, height, text);
 
   const pipeline = image.composite([
     { input: watermarkSvg, top: 0, left: 0 },

@@ -56,6 +56,14 @@ db.exec(`
     createdAt TEXT NOT NULL DEFAULT (datetime('now')),
     updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS watermark_text (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    text TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (userId) REFERENCES user(id)
+  );
 `);
 
 console.log("Database initialized at data/app.db");

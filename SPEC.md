@@ -6,13 +6,16 @@ A photo watermarking tool designed for architectural photography professionals.
 
 ## What It Does
 
-Add Watermark applies a professional diagonal watermark to your photos, protecting your work while maintaining visual appeal. The default watermark displays "Léonore Grec Architecte" across each image.
+Add Watermark applies a professional diagonal watermark to your photos, protecting your work while maintaining visual appeal. Users can customize their watermark text from a personal list of saved texts. The default watermark text for new users is `<user_name> architecte`, derived from their account name.
 
 
 ### Core Features
 
 **Upload an image to process watermark**
 **Download the processed image**
+
+**Custom Watermark Text**
+Users can manage a personal list of watermark texts. A dropdown lets them pick which text to apply. They can add new texts and delete existing ones. When no saved texts exist, the default watermark is `<user_name> architecte` (derived from the user's `name` field).
 
 **Diagonal Placement**
 The watermark text runs elegantly from the bottom-left to the top-right corner of each photo, providing comprehensive coverage without obscuring key details.
@@ -72,6 +75,14 @@ Users can:
 - Log in / log out
 
 Authentication state is accessible on server (for SSR) and on client (for protected UI).
+
+### 3.2 Watermark Text Management
+
+Users can:
+- View their saved watermark texts in a dropdown selector
+- Add a new watermark text to their personal list
+- Delete an existing watermark text from their list
+- When no saved texts exist, the default watermark text is `<user_name> architecte` (derived from the user's `name` field in the `user` table)
 
 
 ## 4. Non-Functional Requirements
@@ -204,6 +215,27 @@ CREATE TABLE verification (
 | createdAt | TEXT | Timestamp of when the verification request was created |
 | updatedAt | TEXT | Timestamp of when the verification request was updated |
 
+#### Application Tables
+
+**watermark_text**
+
+```sql
+CREATE TABLE watermark_text (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  text TEXT NOT NULL,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES user(id)
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | TEXT | Unique identifier for each watermark text (primary key) |
+| userId | TEXT | The ID of the user who owns this text (foreign key) |
+| text | TEXT | The watermark text content |
+| createdAt | TEXT | Timestamp of when the text was created |
+
 
 ## 6. Backend: DB & API Layer
 
@@ -227,8 +259,9 @@ CREATE TABLE verification (
 `POST /api/watermark`
 
 - Accepts `multipart/form-data` with one or more image files
+- Accepts an optional `watermarkTextId` field; if absent, uses the default text (`<user_name> architecte`)
 - Accepted MIME types: `image/png`, `image/jpeg`
-- Max file size: **10 MB** per image
+- Max file size: **12 MB** per image
 - Returns processed JPEG image(s) or PNG image(s)
 - Requires authentication (session cookie)
 
@@ -243,6 +276,21 @@ CREATE TABLE verification (
 
 Implement a server helper from better-auth like `getCurrentUser()` or `getSession()`.
 
+### 7.4 Watermark Texts Endpoint
+
+`GET /api/watermark-texts`
+- Returns the authenticated user's saved watermark texts
+- Requires authentication (session cookie)
+
+`POST /api/watermark-texts`
+- Adds a new watermark text to the authenticated user's list
+- Body: `{ "text": "..." }`
+- Requires authentication (session cookie)
+
+`DELETE /api/watermark-texts/:id`
+- Deletes a watermark text by ID (must belong to the authenticated user)
+- Requires authentication (session cookie)
+
 ## 8. File Storage
 
 - Processed images are returned directly in the API response — **no server-side persistence**
@@ -255,12 +303,12 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
   - Diagonal text running bottom-left → top-right
   - Text color: white (`#FFFFFF`) at **50% opacity**
   - Font size proportional to image dimensions (scales automatically)
-  - Default watermark text: `Léonore Grec Architecte`
+  - Default watermark text: `<user_name> architecte` (from the user's `name` field), or the user-selected text from their saved list
 - Output format: JPEG (high quality)
 
 ## 10. Security
 
-- **File size limit:** 10 MB per image, enforced server-side
+- **File size limit:** 12 MB per image, enforced server-side
 - **Input validation:** verify MIME type (`image/png`, `image/jpeg`) before processing
 - **Auth middleware:** `/api/watermark` requires a valid session — reject unauthenticated requests with 401
 - **Rate limiting:** consider rate limiting per user to prevent abuse (future improvement)
@@ -269,7 +317,7 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
 
 - **Login** (`/login`) — email + password form
 - **Sign Up** (`/signup`) — email + password + name form
-- **Dashboard** (`/`) — protected page; upload area, file list showing name and size for each selected file, process button, download processed image(s)
+- **Dashboard** (`/`) — protected page; watermark text dropdown selector (with add/delete management), upload area, file list showing name and size for each selected file, process button, download processed image(s)
 - Basic layout: centered card-based UI, responsive, TailwindCSS styling
 
 ## 12. Development Workflow

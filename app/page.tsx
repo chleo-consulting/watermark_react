@@ -10,6 +10,12 @@ interface ProcessedImage {
   mimeType: string;
 }
 
+interface WatermarkText {
+  id: string;
+  text: string;
+  createdAt: string;
+}
+
 export default function Dashboard() {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
@@ -18,12 +24,24 @@ export default function Dashboard() {
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState<ProcessedImage[]>([]);
   const [error, setError] = useState("");
+  const [watermarkTexts, setWatermarkTexts] = useState<WatermarkText[]>([]);
+  const [selectedTextId, setSelectedTextId] = useState("");
+  const [newText, setNewText] = useState("");
 
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/login");
     }
   }, [isPending, session, router]);
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/watermark-texts")
+        .then((res) => res.json())
+        .then((data) => setWatermarkTexts(data))
+        .catch(() => {});
+    }
+  }, [session]);
 
   if (isPending) {
     return (
@@ -35,6 +53,33 @@ export default function Dashboard() {
 
   if (!session) {
     return null;
+  }
+
+  async function addWatermarkText() {
+    const trimmed = newText.trim();
+    if (!trimmed) return;
+    try {
+      const res = await fetch("/api/watermark-texts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: trimmed }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setWatermarkTexts((prev) => [created, ...prev]);
+        setNewText("");
+      }
+    } catch {}
+  }
+
+  async function deleteWatermarkText(id: string) {
+    try {
+      const res = await fetch(`/api/watermark-texts/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setWatermarkTexts((prev) => prev.filter((t) => t.id !== id));
+        if (selectedTextId === id) setSelectedTextId("");
+      }
+    } catch {}
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -63,6 +108,9 @@ export default function Dashboard() {
     const formData = new FormData();
     for (const file of files) {
       formData.append("files", file);
+    }
+    if (selectedTextId) {
+      formData.append("watermarkTextId", selectedTextId);
     }
 
     try {
@@ -115,6 +163,61 @@ export default function Dashboard() {
             className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
           >
             Log out
+          </button>
+        </div>
+      </div>
+
+      {/* Watermark text management */}
+      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-3 font-medium">Watermark Text</h2>
+        <select
+          value={selectedTextId}
+          onChange={(e) => setSelectedTextId(e.target.value)}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">{session.user.name} architecte (default)</option>
+          {watermarkTexts.map((wt) => (
+            <option key={wt.id} value={wt.id}>
+              {wt.text}
+            </option>
+          ))}
+        </select>
+
+        {watermarkTexts.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {watermarkTexts.map((wt) => (
+              <li
+                key={wt.id}
+                className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-1.5 text-sm"
+              >
+                <span className="truncate">{wt.text}</span>
+                <button
+                  onClick={() => deleteWatermarkText(wt.id)}
+                  className="ml-2 text-gray-400 hover:text-red-500"
+                  aria-label={`Delete "${wt.text}"`}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-3 flex gap-2">
+          <input
+            type="text"
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addWatermarkText()}
+            placeholder="New watermark text..."
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <button
+            onClick={addWatermarkText}
+            disabled={!newText.trim()}
+            className="rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 disabled:opacity-50"
+          >
+            Add
           </button>
         </div>
       </div>

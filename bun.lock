@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "add-watermark",
+      "name": "watermark-archi-react",
       "dependencies": {
         "better-auth": "^1.4.18",
         "better-sqlite3": "^12.6.2",
