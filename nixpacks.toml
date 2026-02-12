@@ -1,2 +1,12 @@
 [phases.setup]
 aptPkgs = ["fontconfig"]
+nixPkgs = ["bun"]
+
+[phases.install]
+cmds = ["bun install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["bun run build"]
+
+[start]
+cmd = "bun run start"
