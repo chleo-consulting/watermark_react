@@ -26,6 +26,9 @@ White text at 50% opacity ensures the watermark is clearly visible while remaini
 **Automatic Sizing**
 The watermark scales proportionally to each photo's dimensions, ensuring consistent, professional results regardless of image size or resolution.
 
+**Live Watermark Preview**
+After uploading, a client-side preview renders the watermark as an SVG overlay on the first selected image — replicating the exact server-side formula (font size, angle, spacing). The preview updates instantly when the user changes the watermark text dropdown, requiring zero API calls.
+
 **Batch Processing**
 Process entire folders of photos at once, saving time when watermarking large project collections or portfolio archives.
 
@@ -317,7 +320,7 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
 
 - **Login** (`/login`) — email + password form
 - **Sign Up** (`/signup`) — email + password + name form
-- **Dashboard** (`/`) — protected page; watermark text dropdown selector (with add/delete management), upload area, file list showing name and size for each selected file, process button, download processed image(s)
+- **Dashboard** (`/`) — protected page; watermark text dropdown selector (with add/delete management), upload area, live watermark preview (client-side SVG overlay on first image), file list showing name and size for each selected file, process button, download processed image(s)
 - Basic layout: centered card-based UI, responsive, TailwindCSS styling
 
 ## 12. Development Workflow

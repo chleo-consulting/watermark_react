@@ -16,6 +16,39 @@ interface WatermarkText {
   createdAt: string;
 }
 
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function buildWatermarkSvgMarkup(width: number, height: number, text: string): string {
+  const diagonal = Math.sqrt(width * width + height * height);
+  const fontSize = Math.max(16, Math.round(diagonal / 30));
+  const lineSpacing = fontSize * 3;
+  const angle = -Math.atan2(height, width) * (180 / Math.PI);
+
+  const coverSize = diagonal * 2;
+  const offsetX = -coverSize / 2 + width / 2;
+  const offsetY = -coverSize / 2 + height / 2;
+
+  const lines: string[] = [];
+  for (let y = 0; y < coverSize; y += lineSpacing) {
+    lines.push(
+      `<text x="${coverSize / 2}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="${fontSize}" fill="white" fill-opacity="0.5" letter-spacing="2">${escapeXml(text)}</text>`
+    );
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+  <g transform="translate(${width / 2}, ${height / 2}) rotate(${angle}) translate(${offsetX - width / 2}, ${offsetY - height / 2})">
+    ${lines.join("\n    ")}
+  </g>
+</svg>`;
+}
+
 export default function Dashboard() {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
@@ -28,6 +61,22 @@ export default function Dashboard() {
   const [selectedTextId, setSelectedTextId] = useState("");
   const [newText, setNewText] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewDimensions, setPreviewDimensions] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    if (files.length === 0) {
+      setPreviewUrl(null);
+      setPreviewDimensions(null);
+      return;
+    }
+    const url = URL.createObjectURL(files[0]);
+    setPreviewUrl(url);
+    const img = new Image();
+    img.onload = () => setPreviewDimensions({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [files]);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -282,6 +331,39 @@ export default function Dashboard() {
                   className="hidden"
                 />
               </div>
+
+              {/* Live preview */}
+              {previewUrl && previewDimensions && (
+                <div className="mt-4">
+                  <h3 className="mb-2 text-sm font-semibold text-dark">
+                    Preview{files.length > 1 ? " (first image)" : ""}
+                  </h3>
+                  <div
+                    className="relative overflow-hidden rounded-lg border border-mist/30"
+                    style={{
+                      aspectRatio: `${previewDimensions.w} / ${previewDimensions.h}`,
+                      maxHeight: 360,
+                    }}
+                  >
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                    />
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: buildWatermarkSvgMarkup(
+                          previewDimensions.w,
+                          previewDimensions.h,
+                          selectedTextId
+                            ? (watermarkTexts.find((wt) => wt.id === selectedTextId)?.text ?? `${session.user.name} architecte`)
+                            : `${session.user.name} architecte`
+                        ),
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* File list */}
               {files.length > 0 && (
