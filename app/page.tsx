@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [watermarkTexts, setWatermarkTexts] = useState<WatermarkText[]>([]);
   const [selectedTextId, setSelectedTextId] = useState("");
   const [newText, setNewText] = useState("");
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -46,7 +47,7 @@ export default function Dashboard() {
   if (isPending) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-mist">Loading...</p>
       </main>
     );
   }
@@ -85,6 +86,19 @@ export default function Dashboard() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
       setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+      setResults([]);
+      setError("");
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const dropped = Array.from(e.dataTransfer.files).filter(
+      (f) => f.type === "image/png" || f.type === "image/jpeg"
+    );
+    if (dropped.length > 0) {
+      setFiles((prev) => [...prev, ...dropped]);
       setResults([]);
       setError("");
     }
@@ -153,173 +167,213 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Add Watermark</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">{session.user.name}</span>
-          <button
-            onClick={handleLogout}
-            className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
-          >
-            Log out
-          </button>
+    <div className="min-h-screen">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-10 border-b border-mist/30 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <h1 className="text-lg font-semibold text-dark">Add Watermark</h1>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy/10 text-sm font-medium text-navy">
+              {session.user.name?.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-sm text-dark/60">{session.user.name}</span>
+            <button
+              onClick={handleLogout}
+              className="rounded-md border border-mist/40 px-3 py-1.5 text-sm text-dark/60 transition-colors hover:bg-cream hover:text-dark"
+            >
+              Log out
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Watermark text management */}
-      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-3 font-medium">Watermark Text</h2>
-        <select
-          value={selectedTextId}
-          onChange={(e) => setSelectedTextId(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">{session.user.name} architecte (default)</option>
-          {watermarkTexts.map((wt) => (
-            <option key={wt.id} value={wt.id}>
-              {wt.text}
-            </option>
-          ))}
-        </select>
-
-        {watermarkTexts.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {watermarkTexts.map((wt) => (
-              <li
-                key={wt.id}
-                className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-1.5 text-sm"
+      {/* Two-column layout */}
+      <main className="mx-auto max-w-6xl px-6 py-6">
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          {/* Sidebar — Settings */}
+          <aside className="space-y-4">
+            <div className="rounded-xl border border-mist/30 bg-white p-5 shadow-sm">
+              <h2 className="mb-3 text-sm font-semibold text-dark">Watermark Text</h2>
+              <select
+                value={selectedTextId}
+                onChange={(e) => setSelectedTextId(e.target.value)}
+                className="w-full rounded-lg border border-mist/40 bg-cream/50 px-3 py-2 text-sm text-dark focus:border-steel focus:outline-none focus:ring-1 focus:ring-steel"
               >
-                <span className="truncate">{wt.text}</span>
+                <option value="">{session.user.name} architecte (default)</option>
+                {watermarkTexts.map((wt) => (
+                  <option key={wt.id} value={wt.id}>
+                    {wt.text}
+                  </option>
+                ))}
+              </select>
+
+              {watermarkTexts.length > 0 && (
+                <ul className="mt-3 space-y-1">
+                  {watermarkTexts.map((wt) => (
+                    <li
+                      key={wt.id}
+                      className="group flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-dark/60 hover:bg-cream/50"
+                    >
+                      <span className="truncate">{wt.text}</span>
+                      <button
+                        onClick={() => deleteWatermarkText(wt.id)}
+                        className="ml-2 text-mist transition-colors hover:text-navy group-hover:text-dark/60"
+                        aria-label={`Delete "${wt.text}"`}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addWatermarkText()}
+                  placeholder="New watermark text..."
+                  className="flex-1 rounded-lg border border-mist/40 bg-cream/50 px-3 py-2 text-sm text-dark placeholder:text-mist focus:border-steel focus:outline-none focus:ring-1 focus:ring-steel"
+                />
                 <button
-                  onClick={() => deleteWatermarkText(wt.id)}
-                  className="ml-2 text-gray-400 hover:text-red-500"
-                  aria-label={`Delete "${wt.text}"`}
+                  onClick={addWatermarkText}
+                  disabled={!newText.trim()}
+                  className="rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-navy/90 disabled:opacity-40"
                 >
-                  ✕
+                  Add
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
+              </div>
+            </div>
+          </aside>
 
-        <div className="mt-3 flex gap-2">
-          <input
-            type="text"
-            value={newText}
-            onChange={(e) => setNewText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addWatermarkText()}
-            placeholder="New watermark text..."
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-          <button
-            onClick={addWatermarkText}
-            disabled={!newText.trim()}
-            className="rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 disabled:opacity-50"
-          >
-            Add
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        {/* Upload area */}
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center hover:border-blue-400"
-        >
-          <p className="text-gray-600">
-            {files.length > 0
-              ? `${files.length} file(s) selected`
-              : "Click to select images (PNG, JPEG)"}
-          </p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg"
-            multiple
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
-
-        {/* File list */}
-        {files.length > 0 && (
-          <ul className="mt-3 space-y-1">
-            {files.map((file, i) => (
-              <li
-                key={`${file.name}-${i}`}
-                className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-2 text-sm"
+          {/* Workspace — Upload, process, results */}
+          <section className="space-y-4">
+            <div className="rounded-xl border border-mist/30 bg-white p-5 shadow-sm">
+              {/* Upload area */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
+                  dragOver
+                    ? "border-steel bg-steel/10"
+                    : "border-mist/40 hover:border-steel/50 hover:bg-cream/50"
+                }`}
               >
-                <span className="truncate">
-                  {file.name}{" "}
-                  <span className="text-gray-400">({formatSize(file.size)})</span>
-                </span>
+                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-steel/10 text-steel">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-dark/60">
+                  {files.length > 0
+                    ? `${files.length} file(s) selected — click to add more`
+                    : "Drop images here or click to browse"}
+                </p>
+                <p className="mt-1 text-xs text-mist">PNG, JPEG up to 12 MB</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
+
+              {/* File list */}
+              {files.length > 0 && (
+                <ul className="mt-4 space-y-1">
+                  {files.map((file, i) => (
+                    <li
+                      key={`${file.name}-${i}`}
+                      className="group flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-cream/50"
+                    >
+                      <span className="truncate text-dark">
+                        {file.name}{" "}
+                        <span className="text-dark/60">({formatSize(file.size)})</span>
+                      </span>
+                      <button
+                        onClick={() => removeFile(i)}
+                        className="ml-2 text-mist transition-colors hover:text-navy group-hover:text-dark/60"
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Process button */}
+              {files.length > 0 && (
                 <button
-                  onClick={() => removeFile(i)}
-                  className="ml-2 text-gray-400 hover:text-red-500"
-                  aria-label={`Remove ${file.name}`}
+                  onClick={handleProcess}
+                  disabled={processing}
+                  className="mt-4 w-full rounded-lg bg-navy py-2.5 text-sm font-medium text-white transition-colors hover:bg-navy/90 disabled:opacity-50"
                 >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Process button */}
-        {files.length > 0 && (
-          <button
-            onClick={handleProcess}
-            disabled={processing}
-            className="mt-4 w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {processing ? "Processing..." : "Add Watermark"}
-          </button>
-        )}
-
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-
-        {/* Results */}
-        {results.length > 0 && (
-          <div className="mt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-medium">Processed Images</h2>
-              {results.length > 1 && (
-                <button
-                  onClick={downloadAll}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Download all
+                  {processing ? "Processing..." : "Add Watermark"}
                 </button>
               )}
-            </div>
-            <div className="space-y-3">
-              {results.map((img, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-md border border-gray-200 p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={`data:${img.mimeType};base64,${img.data}`}
-                      alt={img.name}
-                      className="h-12 w-12 rounded object-cover"
-                    />
-                    <span className="text-sm">{img.name}</span>
-                  </div>
-                  <button
-                    onClick={() => downloadImage(img)}
-                    className="rounded-md bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
-                  >
-                    Download
-                  </button>
+
+              {error && (
+                <div className="mt-3 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">
+                  {error}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
-      </div>
-    </main>
+
+            {/* Results */}
+            {results.length > 0 && (
+              <div className="rounded-xl border border-mist/30 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <h2 className="text-sm font-semibold text-dark">
+                      {results.length} image{results.length > 1 ? "s" : ""} ready
+                    </h2>
+                  </div>
+                  {results.length > 1 && (
+                    <button
+                      onClick={downloadAll}
+                      className="rounded-lg bg-steel/10 px-3 py-1.5 text-sm font-medium text-dark transition-colors hover:bg-steel/20"
+                    >
+                      Download all
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {results.map((img, i) => (
+                    <div
+                      key={i}
+                      className="group relative overflow-hidden rounded-lg border border-mist/30"
+                    >
+                      <img
+                        src={`data:${img.mimeType};base64,${img.data}`}
+                        alt={img.name}
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-end bg-gradient-to-t from-dark/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex w-full items-center justify-between p-2">
+                          <span className="truncate text-xs text-white">{img.name}</span>
+                          <button
+                            onClick={() => downloadImage(img)}
+                            className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-dark transition-colors hover:bg-white"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }

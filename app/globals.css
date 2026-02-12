@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+  --color-dark: #2D2D2D;
+  --color-dark-60: color-mix(in oklab, #2D2D2D 60%, transparent);
+  --color-navy: #005F02;
+  --color-navy-90: color-mix(in oklab, #005F02 90%, transparent);
+  --color-navy-80: color-mix(in oklab, #005F02 80%, transparent);
+  --color-navy-60: color-mix(in oklab, #005F02 60%, transparent);
+  --color-steel: #427A43;
+  --color-steel-50: color-mix(in oklab, #427A43 50%, transparent);
+  --color-mist: #C0B87A;
+  --color-mist-40: color-mix(in oklab, #C0B87A 40%, transparent);
+  --color-mist-30: color-mix(in oklab, #C0B87A 30%, transparent);
+  --color-mist-20: color-mix(in oklab, #C0B87A 20%, transparent);
+  --color-mist-10: color-mix(in oklab, #C0B87A 10%, transparent);
+  --color-cream: #F2E3BB;
+  --color-cream-50: color-mix(in oklab, #F2E3BB 50%, transparent);
+}
