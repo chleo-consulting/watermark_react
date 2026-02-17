@@ -444,7 +444,7 @@ export default function Dashboard() {
                             onClick={() => downloadImage(img)}
                             className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-dark transition-colors hover:bg-white"
                           >
-                            Save
+                            Download
                           </button>
                         </div>
                       </div>

@@ -294,6 +294,12 @@ Implement a server helper from better-auth like `getCurrentUser()` or `getSessio
 - Deletes a watermark text by ID (must belong to the authenticated user)
 - Requires authentication (session cookie)
 
+### 7.5 Database Backup Endpoint
+
+`GET /api/admin/backup`
+- Protected by `BACKUP_SECRET` environment variable (Bearer token)
+- Returns a consistent SQLite database copy via `VACUUM INTO`
+
 ## 8. File Storage
 
 - Processed images are returned directly in the API response — **no server-side persistence**

@@ -12,12 +12,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-bun dev          # Start development server (http://localhost:3000)
-bun run build    # Build for production
-bun run lint     # Run ESLint
-bun start        # Start production server
-bun run db:init  # Initialize the database
+bun dev              # Start development server (http://localhost:3000)
+bun run build        # Build for production
+bun run lint         # Run ESLint
+bun start            # Start production server
+bun run db:init      # Initialize the database
+./scripts/backup.sh  # Download a SQLite backup (requires BACKUP_SECRET & APP_URL)
 ```
+
+## Environment Variables
+
+- `BACKUP_SECRET` — Bearer token for `GET /api/admin/backup` (database download endpoint)
 
 ## Architecture
 
